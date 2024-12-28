@@ -8,7 +8,6 @@ import zhCN from "./translations/zh-CN.json"
 const TOOLBAR_ID = "kef-wrap-toolbar"
 let toolbar
 let textarea
-const useCustMark = true
 
 async function main() {
   // Reset values.
@@ -220,7 +219,7 @@ async function getDefinitions() {
   if (ret.length > 0) return ret
 
   const { preferredFormat } = await logseq.App.getUserConfigs()
-  const getColorMark = (color) => useCustMark ? `[:mark {:class "${color}"} "$^"]` : `[[${color}]]==$^==`
+  const getColorMark = (color) => `[[${color}]]==$^==`
   return [
     {
       key: "wrap-page",
@@ -463,13 +462,10 @@ async function onSelectionChange(e) {
   }
 
   if (toolbar != null && activeElement === textarea) {
-    if (
-      textarea.selectionStart === textarea.selectionEnd &&
-      toolbar.style.opacity !== "0"
-    ) {
-      toolbar.style.opacity = "0"
-    } else if (textarea.selectionStart !== textarea.selectionEnd) {
+    if (textarea.selectionStart !== textarea.selectionEnd) {
       await updateToolbarPosition()
+    } else {
+      hideToolbar()
     }
   }
 }
@@ -478,10 +474,9 @@ function onTextDelete(e) {
   if (
     (e.key === "Backspace" || e.key === "Delete") &&
     textarea.selectionStart === 0 &&
-    textarea.selectionEnd === textarea.value.length &&
-    toolbar.style.opacity !== "0"
+    textarea.selectionEnd === textarea.value.length
   ) {
-    toolbar.style.opacity = "0"
+    hideToolbar()
   }
 }
 
@@ -508,28 +503,29 @@ function onToolbarTransitionEnd(e) {
 function onBlur(e) {
   console.debug("Toolbar blur event");
   // Update toolbar visibility upon activeElement change.
-  if (document.activeElement !== textarea && toolbar?.style.opacity !== "0") {
+  if (document.activeElement !== textarea) {
+    hideToolbar()
+  }
+}
+
+function hideToolbar() {
+  if (toolbar.style.opacity !== "0") {
     toolbar.style.opacity = "0"
   }
 }
 
-// There is a large gap between 2 displays of the toolbar, so a large
-// ms number is acceptable.
-const hideToolbar = throttle(() => {
-  if (toolbar.style.opacity !== "0") {
-    toolbar.style.opacity = "0"
-  }
-}, 1000)
-
-const showToolbar = debounce(async () => {
-  if (textarea != null && textarea.selectionStart !== textarea.selectionEnd) {
-    await updateToolbarPosition()
-  }
-}, 100)
-
 function onScroll(e) {
-  hideToolbar()
-  showToolbar()
+  // There is a large gap between 2 displays of the toolbar, so a large
+  // ms number is acceptable.
+  const hide = throttle(hideToolbar, 1000)
+  const show = debounce(async () => {
+    if (textarea != null && textarea.selectionStart !== textarea.selectionEnd) {
+      await updateToolbarPosition()
+    }
+  }, 100)
+
+  hide()
+  show()
 }
 
 function toggleToolbarDisplay() {
