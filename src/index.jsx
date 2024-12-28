@@ -139,21 +139,17 @@ async function main() {
       template: `<div id="${TOOLBAR_ID}"></div>`,
     })
 
+    let command = {
+      key: "toggle-toolbar",
+      label: t("Toggle toolbar display"),
+    };
     if (logseq.settings?.toolbarShortcut) {
-      logseq.App.registerCommandPalette(
-        {
-          key: "toggle-toolbar",
-          label: t("Toggle toolbar display"),
-          keybinding: { binding: logseq.settings?.toolbarShortcut },
-        },
-        toggleToolbarDisplay,
-      )
-    } else {
-      logseq.App.registerCommandPalette(
-        { key: "toggle-toolbar", label: t("Toggle toolbar display") },
-        toggleToolbarDisplay,
-      )
+      command.keybinding = { binding: logseq.settings?.toolbarShortcut }
     }
+    logseq.App.registerCommandPalette(
+      command,
+      toggleToolbarDisplay,
+    )
 
     // Let div root element get generated first.
     setTimeout(async () => {
@@ -176,7 +172,7 @@ async function main() {
 
   logseq.beforeunload(async () => {
     if (textarea) {
-      textarea.removeEventListener("keydown", deletionWorkaroundHandler)
+      textarea.removeEventListener("keydown", onTextDelete)
     }
     const mainContentContainer = parent.document.getElementById(
       "main-content-container",
@@ -244,18 +240,6 @@ async function getDefinitions() {
           template: " {{cloze $^}}",
           icon: `<svg t="1643261888324" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5478" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><defs><style type="text/css"></style></defs><path d="M341.333333 396.8V320H170.666667v384h170.666666v-76.8H256V396.8zM682.666667 396.8V320h170.666666v384h-170.666666v-76.8h85.333333V396.8zM535.04 533.333333h40.96v-42.666666h-40.96V203.093333l92.16-24.746666-11.093333-40.96-102.4 27.306666-102.4-27.306666-11.093334 40.96 92.16 24.746666v287.573334H448v42.666666h44.373333v287.573334l-92.16 24.746666 11.093334 40.96 102.4-27.306666 102.4 27.306666 11.093333-40.96-92.16-24.746666z" p-id="5479" fill="#eeeeee"></path></svg>`,
         },
-        /* 和css一起工作
-span[data-ref="#cloze"] {
-  display: none;
-}
-span[data-ref="#cloze"] + mark {
-  color: transparent !important;
-  text-decoration: underline 1px dashed var(--ls-primary-text-color) !important;
-}
-span[data-ref="#cloze"] + mark:hover {
-  color: var(--ls-primary-text-color) !important;
-}
-         */
         {
           key: "wrap-cloze-invisible",
           label: t("Wrap with invisible"),
@@ -416,7 +400,7 @@ async function updateBlockText(producer, ...args) {
   const block = await logseq.Editor.getCurrentBlock()
 
   if (block == null || textarea == null) {
-    logseq.App.showMsg(
+    logseq.UI.showMsg(
       t("This command can only be used when editing text"),
       "error",
     )
@@ -470,11 +454,11 @@ async function onSelectionChange(e) {
     activeElement.nodeName.toLowerCase() === "textarea"
   ) {
     if (toolbar != null && textarea != null) {
-      textarea.removeEventListener("keydown", deletionWorkaroundHandler)
+      textarea.removeEventListener("keydown", onTextDelete)
     }
     textarea = activeElement
     if (toolbar != null) {
-      textarea.addEventListener("keydown", deletionWorkaroundHandler)
+      textarea.addEventListener("keydown", onTextDelete)
     }
   }
 
@@ -485,12 +469,12 @@ async function onSelectionChange(e) {
     ) {
       toolbar.style.opacity = "0"
     } else if (textarea.selectionStart !== textarea.selectionEnd) {
-      await positionToolbar()
+      await updateToolbarPosition()
     }
   }
 }
 
-function deletionWorkaroundHandler(e) {
+function onTextDelete(e) {
   if (
     (e.key === "Backspace" || e.key === "Delete") &&
     textarea.selectionStart === 0 &&
@@ -501,18 +485,14 @@ function deletionWorkaroundHandler(e) {
   }
 }
 
-async function positionToolbar() {
+async function updateToolbarPosition() {
   const curPos = await logseq.Editor.getEditingCursorPosition()
   if (curPos != null) {
     toolbar.style.top = `${curPos.top + curPos.rect.y - 35}px`
-    if (
-      curPos.left + curPos.rect.x + toolbar.clientWidth <=
-      parent.window.innerWidth
-    ) {
+    if (curPos.left + curPos.rect.x + toolbar.clientWidth <= parent.window.innerWidth) {
       toolbar.style.left = `${curPos.left + curPos.rect.x}px`
     } else {
-      toolbar.style.left = `${-toolbar.clientWidth + parent.window.innerWidth
-        }px`
+      toolbar.style.left = `${-toolbar.clientWidth + parent.window.innerWidth}px`
     }
     toolbar.style.opacity = "1"
   }
@@ -526,6 +506,7 @@ function onToolbarTransitionEnd(e) {
 }
 
 function onBlur(e) {
+  console.debug("Toolbar blur event");
   // Update toolbar visibility upon activeElement change.
   if (document.activeElement !== textarea && toolbar?.style.opacity !== "0") {
     toolbar.style.opacity = "0"
@@ -542,7 +523,7 @@ const hideToolbar = throttle(() => {
 
 const showToolbar = debounce(async () => {
   if (textarea != null && textarea.selectionStart !== textarea.selectionEnd) {
-    await positionToolbar()
+    await updateToolbarPosition()
   }
 }, 100)
 
