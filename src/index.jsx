@@ -1,19 +1,17 @@
 import "@logseq/libs"
 import { setup, t } from "logseq-l10n"
 import { render } from "preact"
-import { debounce, throttle } from "rambdax"
-import Toolbar from "./Toolbar.jsx"
+import Toolbar from "./toolbar/Toolbar.jsx"
 import zhCN from "./translations/zh-CN.json"
 import { configToModel, getConfig, registerCommandsByConfig } from "./config/config.jsx"
 import { TOOLBAR_ID } from "./contansts.js"
-import { isEditingText, isTextSelected, addTextDeleteCallback, removeTextDeleteCallback, setTextArea } from "./core.jsx"
+import { isEditingText, isTextSelected, isSelectAll, addTextDeleteCallback, setTextArea } from "./core.jsx"
 import { registerCommand } from "./utils.jsx"
+import toolbarContainer from "./toolbar/container.jsx"
 
-let toolbar
-
-async function main() {
+export async function main() {
   // Reset values.
-  toolbar = null
+  let appContainer = null
   setTextArea(null)
 
   await setup({ builtinTranslations: { "zh-CN": zhCN } })
@@ -136,115 +134,51 @@ async function main() {
       label: t("Toggle toolbar display"),
       binding: logseq.settings?.toolbarShortcut,
     })
-
-    // Let div root element get generated first.
-    setTimeout(async () => {
-      toolbar = parent.document.getElementById(TOOLBAR_ID)
-      render(<Toolbar items={configs} model={model} />, toolbar)
-
-      toolbar.addEventListener("transitionend", onToolbarTransitionEnd)
-      parent.document.addEventListener("focusout", onBlur)
-
-      const mainContentContainer = parent.document.getElementById(
-        "main-content-container",
-      )
-      mainContentContainer.addEventListener("scroll", onScroll, {
-        passive: true,
-      })
-    }, 0)
   }
 
-  parent.document.addEventListener("selectionchange", (e) => onSelectionChange(e))
-  registerCommandsByConfig(model, configs)
+  // Let div root element get generated first.
+  setTimeout(async () => {
+    const container = parent.document.getElementById(TOOLBAR_ID)
+    if (container) {
+      render(<Toolbar items={configs} model={model} />, container)
+      appContainer = new toolbarContainer(container)
+      appContainer.registerContainerEvents()
+    }
 
-  logseq.beforeunload(async () => {
-    removeTextDeleteCallback(onTextDelete)
-    const mainContentContainer = parent.document.getElementById(
-      "main-content-container",
-    )
-    mainContentContainer.removeEventListener("scroll", onScroll, {
-      passive: true,
+    parent.document.addEventListener("selectionchange", (e) => onSelectionChange(appContainer))
+    registerCommandsByConfig(model, configs)
+
+    logseq.beforeunload(async () => {
+      appContainer?.unregisterContainerEvents()
+      parent.document.removeEventListener("selectionchange", (e) => onSelectionChange(appContainer))
     })
-    toolbar?.removeEventListener("transitionend", onToolbarTransitionEnd)
-    parent.document.removeEventListener("focusout", onBlur)
-    parent.document.removeEventListener("selectionchange", onSelectionChange)
-  })
+  }, 0)
 
   console.log("#wrap loaded")
 }
 
-async function onSelectionChange(e) {
+async function onSelectionChange(container) {
+  console.debug('selection change triggered')
   const activeElement = parent.document.activeElement
   if (activeElement.nodeName.toLowerCase() === "textarea") {
-    if (toolbar != null) {
-      removeTextDeleteCallback(onTextDelete)
-    }
     setTextArea(activeElement)
-    if (toolbar != null) {
-      addTextDeleteCallback(onTextDelete)
-    }
   }
 
-  if (toolbar != null && isEditingText()) {
+  if (container !== null && isEditingText()) {
+    if (isSelectAll()) {
+      addTextDeleteCallback((e) => {
+        if ((e.key === "Backspace" || e.key === "Delete")) {
+          container.hideToolbar()
+        }
+      }, { once: true })
+    }
+
     if (isTextSelected()) {
-      await updateToolbarPosition()
+      await container.showToolbar()
     } else {
-      hideToolbar()
+      container.hideToolbar()
     }
   }
-}
-
-function onTextDelete(e) {
-  if ((e.key === "Backspace" || e.key === "Delete") && isSelectAll()) {
-    hideToolbar()
-  }
-}
-
-async function updateToolbarPosition() {
-  const curPos = await logseq.Editor.getEditingCursorPosition()
-  if (curPos != null) {
-    toolbar.style.top = `${curPos.top + curPos.rect.y - 35}px`
-    if (curPos.left + curPos.rect.x + toolbar.clientWidth <= parent.window.innerWidth) {
-      toolbar.style.left = `${curPos.left + curPos.rect.x}px`
-    } else {
-      toolbar.style.left = `${-toolbar.clientWidth + parent.window.innerWidth}px`
-    }
-    toolbar.style.opacity = "1"
-  }
-}
-
-function onToolbarTransitionEnd(e) {
-  if (toolbar.style.opacity === "0") {
-    toolbar.style.top = "0"
-    toolbar.style.left = "-99999px"
-  }
-}
-
-function onBlur(e) {
-  // Update toolbar visibility upon activeElement change.
-  if (!isEditingText()) {
-    hideToolbar()
-  }
-}
-
-function hideToolbar() {
-  if (toolbar.style.opacity !== "0") {
-    toolbar.style.opacity = "0"
-  }
-}
-
-function onScroll(e) {
-  // There is a large gap between 2 displays of the toolbar, so a large
-  // ms number is acceptable.
-  const hide = throttle(hideToolbar, 1000)
-  const show = debounce(async () => {
-    if (isTextSelected()) {
-      await updateToolbarPosition()
-    }
-  }, 100)
-
-  hide()
-  show()
 }
 
 function toggleToolbarDisplay() {
