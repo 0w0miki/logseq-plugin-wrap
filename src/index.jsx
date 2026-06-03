@@ -6,7 +6,7 @@ import zhCN from "./translations/zh-CN.json"
 import { configToModel, getConfig, registerCommandsByConfig } from "./config/config.jsx"
 import { TOOLBAR_ID } from "./contansts.js"
 import { isEditingText, isTextSelected, isSelectAll, addTextDeleteCallback, setTextArea } from "./core.jsx"
-import { registerCommand } from "./utils.jsx"
+import { registerCommand, waitForFresh } from "./utils.jsx"
 import toolbarContainer from "./toolbar/container.jsx"
 
 export async function main() {
@@ -122,37 +122,46 @@ export async function main() {
   const model = configToModel(configs)
   logseq.provideModel(model)
 
-  if (logseq.settings?.toolbar ?? true) {
+  const onSelectionChangeHandler = () => onSelectionChange(appContainer)
+
+  const mountToolbar = async () => {
+    const old = parent.document.getElementById(TOOLBAR_ID)
     logseq.provideUI({
       key: TOOLBAR_ID,
       path: "#app-container",
       template: `<div id="${TOOLBAR_ID}"></div>`,
     })
+    const container = await waitForFresh(`#${TOOLBAR_ID}`, old)
+    appContainer?.unregisterContainerEvents()
+    render(<Toolbar items={configs} model={model} />, container)
+    appContainer = new toolbarContainer(container)
+    appContainer.registerContainerEvents()
+    console.log("toolbar mounted")
+  }
 
+  if (logseq.settings?.toolbar ?? true) {
     registerCommand(toggleToolbarDisplay, {
       key: "toggle-toolbar",
       label: t("Toggle toolbar display"),
       binding: logseq.settings?.toolbarShortcut,
     })
+
+    setTimeout(async () => {
+      await mountToolbar()
+
+      logseq.App.onRouteChanged(async () => {
+        await mountToolbar()
+      })
+    }, 0)
   }
 
-  // Let div root element get generated first.
-  setTimeout(async () => {
-    const container = parent.document.getElementById(TOOLBAR_ID)
-    if (container) {
-      render(<Toolbar items={configs} model={model} />, container)
-      appContainer = new toolbarContainer(container)
-      appContainer.registerContainerEvents()
-    }
+  parent.document.addEventListener("selectionchange", onSelectionChangeHandler)
+  registerCommandsByConfig(model, configs)
 
-    parent.document.addEventListener("selectionchange", (e) => onSelectionChange(appContainer))
-    registerCommandsByConfig(model, configs)
-
-    logseq.beforeunload(async () => {
-      appContainer?.unregisterContainerEvents()
-      parent.document.removeEventListener("selectionchange", (e) => onSelectionChange(appContainer))
-    })
-  }, 0)
+  logseq.beforeunload(async () => {
+    appContainer?.unregisterContainerEvents()
+    parent.document.removeEventListener("selectionchange", onSelectionChangeHandler)
+  })
 
   console.log("#wrap loaded")
 }
