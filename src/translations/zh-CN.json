@@ -14,5 +14,9 @@
   "Wrap as italic text": "包围成斜体文字",
   "Wrap as formular": "包围成公式",
   "This command can only be used when editing text": "该命令仅在编辑文字时可使用",
-  "Toggle toolbar display": "切换工具条显示"
+  "Toggle toolbar display": "切换工具条显示",
+  "Toolbar": "工具条",
+  "Show the formatting toolbar when text is selected": "选中文字时显示格式化工具条",
+  "Toolbar shortcut": "工具条快捷键",
+  "Shortcut to toggle toolbar visibility": "切换工具条显示的快捷键"
 }

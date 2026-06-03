@@ -17,6 +17,23 @@ export async function main() {
 
   await setup({ builtinTranslations: { "zh-CN": zhCN } })
 
+  logseq.useSettingsSchema([
+    {
+      key: "toolbar",
+      type: "boolean",
+      default: true,
+      title: t("Toolbar"),
+      description: t("Show the formatting toolbar when text is selected"),
+    },
+    {
+      key: "toolbarShortcut",
+      type: "string",
+      default: "",
+      title: t("Toolbar shortcut"),
+      description: t("Shortcut to toggle toolbar visibility"),
+    },
+  ])
+
   const { preferredFormat } = await logseq.App.getUserConfigs()
 
   logseq.provideStyle(toolbarStyles)
@@ -52,26 +69,48 @@ export async function main() {
     console.log("toolbar mounted")
   }
 
-  if (logseq.settings?.toolbar ?? true) {
-    registerCommand(toggleToolbarDisplay, {
-      key: "toggle-toolbar",
-      label: t("Toggle toolbar display"),
-      binding: logseq.settings?.toolbarShortcut,
-    })
-
+  let offRouteChanged = null
+  const enableToolbar = () => {
     setTimeout(async () => {
       await mountToolbar()
-
-      logseq.App.onRouteChanged(async () => {
+      offRouteChanged = logseq.App.onRouteChanged(async () => {
         await mountToolbar()
       })
     }, 0)
   }
 
+  const disableToolbar = () => {
+    offRouteChanged?.()
+    offRouteChanged = null
+    appContainer?.unregisterContainerEvents()
+    appContainer = null
+    const container = parent.document.getElementById(TOOLBAR_ID)
+    container?.remove()
+  }
+
+  if (logseq.settings?.toolbar ?? true) {
+    enableToolbar()
+    registerCommand(toggleToolbarDisplay, {
+      key: "toggle-toolbar",
+      label: t("Toggle toolbar display"),
+      binding: logseq.settings?.toolbarShortcut,
+    })
+  }
+
+  logseq.onSettingsChanged((newSettings, oldSettings) => {
+    if (newSettings.toolbar === oldSettings.toolbar) return
+    if (newSettings.toolbar) {
+      enableToolbar()
+    } else {
+      disableToolbar()
+    }
+  })
+
   parent.document.addEventListener("selectionchange", onSelectionChangeHandler)
   registerCommandsByConfig(model, configs)
 
   logseq.beforeunload(async () => {
+    offRouteChanged?.()
     appContainer?.unregisterContainerEvents()
     parent.document.removeEventListener("selectionchange", onSelectionChangeHandler)
   })
