@@ -26,7 +26,10 @@ export async function main() {
 
   const onSelectionChangeHandler = () => onSelectionChange(appContainer)
 
+  let isMounting = false
   const mountToolbar = async () => {
+    if (isMounting) return
+    isMounting = true
     const old = parent.document.getElementById(TOOLBAR_ID)
     logseq.provideUI({
       key: TOOLBAR_ID,
@@ -38,12 +41,14 @@ export async function main() {
       container = await waitForFresh(`#${TOOLBAR_ID}`, old)
     } catch (e) {
       console.error(e.message)
+      isMounting = false
       return
     }
     appContainer?.unregisterContainerEvents()
     render(<Toolbar items={configs} model={model} />, container)
     appContainer = new toolbarContainer(container)
     appContainer.registerContainerEvents()
+    isMounting = false
     console.log("toolbar mounted")
   }
 
