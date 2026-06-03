@@ -33,7 +33,13 @@ export async function main() {
       path: "#app-container",
       template: `<div id="${TOOLBAR_ID}"></div>`,
     })
-    const container = await waitForFresh(`#${TOOLBAR_ID}`, old)
+    let container
+    try {
+      container = await waitForFresh(`#${TOOLBAR_ID}`, old)
+    } catch (e) {
+      console.error(e.message)
+      return
+    }
     appContainer?.unregisterContainerEvents()
     render(<Toolbar items={configs} model={model} />, container)
     appContainer = new toolbarContainer(container)
