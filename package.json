@@ -22,6 +22,7 @@
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@swc/core": "^1.2.187",
     "rollup": "^2.74.1",
+    "rollup-plugin-string": "^3.0.0",
     "rollup-plugin-swc3": "^0.3.0"
   }
 }

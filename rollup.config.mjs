@@ -3,6 +3,7 @@ import json from "@rollup/plugin-json"
 import { nodeResolve } from "@rollup/plugin-node-resolve"
 import { readFile } from "fs/promises"
 import { defineRollupSwcOption, swc } from "rollup-plugin-swc3"
+import { string } from "rollup-plugin-string"
 
 export default {
   input: "src/index.jsx",
@@ -24,6 +25,7 @@ export default {
           .replace("{js}", `<script type="module" src="${fileName}"></script>`)
       },
     }),
+    string({ include: "**/*.css" }),
     nodeResolve(),
     json(),
     swc(
