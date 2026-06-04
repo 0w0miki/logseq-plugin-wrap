@@ -14,7 +14,7 @@ export function getConfig(preferredFormat) {
 function flatConfig(definitions) {
   return definitions.flatMap((definition) => {
     if (definition.type === "group") {
-      return flatConfig(definition.items)
+      return flatConfig(definition.items ?? [])
     }
     return definition
   })

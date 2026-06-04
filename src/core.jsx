@@ -20,8 +20,8 @@ export function isSelectAll() {
          textarea.selectionEnd === textarea.value.length
 }
 
-export function addTextDeleteCallback(callback) {
-  textarea?.addEventListener("keydown", callback)
+export function addTextDeleteCallback(callback, options) {
+  textarea?.addEventListener("keydown", callback, options)
 }
 
 export function removeTextDeleteCallback(callback) {

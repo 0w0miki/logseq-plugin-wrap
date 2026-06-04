@@ -101,6 +101,8 @@ Rules are configured as a JSON array under the `customRules` key in `settings.js
 
 If `customRules` is empty or not set, the plugin uses its built-in default rules.
 
+> **Note:** Changes to `customRules` take effect after reloading the plugin (disable and re-enable it in Logseq's plugin panel).
+
 ## Toolbar style customization
 
 Please refer to the following example:
