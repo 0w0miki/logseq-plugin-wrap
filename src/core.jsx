@@ -1,5 +1,4 @@
 import "@logseq/libs"
-import { WRAP_TYPE, REPL_TYPE } from "./contansts.js"
 
 let textarea
 
@@ -87,9 +86,9 @@ function repl(before, selection, after, start, end, regex, replacement) {
 }
 
 export function getTextOperator(type, { template, regex, replacement }) {
-  if (type === WRAP_TYPE) {
+  if (type === "wrap") {
     return () => updateBlockText(wrap, template)
-  } else if (type === REPL_TYPE) {
+  } else if (type === "repl") {
     return () => updateBlockText(repl, regex, replacement)
   }
 }
