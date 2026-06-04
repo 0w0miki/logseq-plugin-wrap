@@ -18,5 +18,7 @@
   "Toolbar": "工具条",
   "Show the formatting toolbar when text is selected": "选中文字时显示格式化工具条",
   "Toolbar shortcut": "工具条快捷键",
-  "Shortcut to toggle toolbar visibility": "切换工具条显示的快捷键"
+  "Shortcut to toggle toolbar visibility": "切换工具条显示的快捷键",
+  "Custom wrap/replace rules": "自定义包围/替换规则",
+  "Configure rules as a JSON array in settings.json under the 'customRules' key. Each rule: { type: 'wrap'|'repl'|'group', key, label, binding, template/regex/replacement/items, icon }. See the README for full examples.": "请在 settings.json 的 'customRules' 键下配置规则数组。每条规则格式：{ type: 'wrap'|'repl'|'group', key, label, binding, template/regex/replacement/items, icon }。完整示例请参阅 README。"
 }

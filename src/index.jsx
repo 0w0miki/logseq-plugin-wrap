@@ -32,6 +32,13 @@ export async function main() {
       title: t("Toolbar shortcut"),
       description: t("Shortcut to toggle toolbar visibility"),
     },
+    {
+      key: "customRules",
+      type: "object",
+      default: [],
+      title: t("Custom wrap/replace rules"),
+      description: t("Configure rules as a JSON array in settings.json under the 'customRules' key. Each rule: { type: 'wrap'|'repl'|'group', key, label, binding, template/regex/replacement/items, icon }. See the README for full examples."),
+    },
   ])
 
   const { preferredFormat } = await logseq.App.getUserConfigs()

@@ -9,7 +9,7 @@ export default function Toolbar({ items, model }) {
   }
 
   return items.map((item) => {
-    if (item.key.startsWith("group-")) {
+    if (item.type === "group") {
       const groupItems = item.items?.filter((subitem) => subitem.icon) ?? []
       if (groupItems.length <= 0) return null
       return (
