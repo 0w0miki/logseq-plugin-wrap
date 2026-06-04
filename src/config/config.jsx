@@ -21,7 +21,10 @@ function flatConfig(definitions) {
 }
 
 function setTextOperatorByConfig(model, config) {
-  model[config.key] = getTextOperator(config.type, config)
+  const op = getTextOperator(config.type, config)
+  if (op != null) {
+    model[config.key] = op
+  }
 }
 
 export function configToModel(configs) {

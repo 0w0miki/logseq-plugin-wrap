@@ -91,4 +91,6 @@ export function getTextOperator(type, { template, regex, replacement }) {
   } else if (type === "repl") {
     return () => updateBlockText(repl, regex, replacement)
   }
+  console.warn(`[wrap-plugin] Unknown rule type: "${type}"`)
+  return null
 }
