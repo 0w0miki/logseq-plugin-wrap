@@ -27,9 +27,63 @@ Rules are configured as a JSON array under the `customRules` key in `settings.js
 
 **Wrap rule** — wraps selected text with a template. `$^` represents the selected text.
 
+```json
+[
+  {
+    "type": "wrap",
+    "key": "bold",
+    "label": "Wrap as bold",
+    "binding": "mod+shift+b",
+    "template": "**$^**",
+    "icon": "<svg ...></svg>"
+  }
+]
+```
+
 **Replace rule** — applies a regex replacement to selected text.
 
+```json
+[
+  {
+    "type": "repl",
+    "key": "clear",
+    "label": "Remove formatting",
+    "binding": "mod+shift+x",
+    "regex": "\\*\\*([^\\*]*)\\*\\*",
+    "replacement": "$1",
+    "icon": "<svg ...></svg>"
+  }
+]
+```
+
 **Group rule** — groups multiple rules into a single toolbar button with a dropdown.
+
+```json
+[
+  {
+    "type": "group",
+    "key": "hl",
+    "items": [
+      {
+        "type": "wrap",
+        "key": "red-hl",
+        "label": "Red highlight",
+        "binding": "",
+        "template": "[[#red]]==$^==",
+        "icon": "<svg ...></svg>"
+      },
+      {
+        "type": "wrap",
+        "key": "green-hl",
+        "label": "Green highlight",
+        "binding": "",
+        "template": "[[#green]]==$^==",
+        "icon": "<svg ...></svg>"
+      }
+    ]
+  }
+]
+```
 
 **Rule fields:**
 

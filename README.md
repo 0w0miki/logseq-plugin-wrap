@@ -27,9 +27,63 @@
 
 **包围规则（wrap）** — 用模板包围选中文字，`$^` 代表选中的文字。
 
+```json
+[
+  {
+    "type": "wrap",
+    "key": "bold",
+    "label": "加粗",
+    "binding": "mod+shift+b",
+    "template": "**$^**",
+    "icon": "<svg ...></svg>"
+  }
+]
+```
+
 **替换规则（repl）** — 对选中文字进行正则替换。
 
+```json
+[
+  {
+    "type": "repl",
+    "key": "clear",
+    "label": "去除格式化",
+    "binding": "mod+shift+x",
+    "regex": "\\*\\*([^\\*]*)\\*\\*",
+    "replacement": "$1",
+    "icon": "<svg ...></svg>"
+  }
+]
+```
+
 **分组规则（group）** — 将多个规则合并为工具条上的一个下拉按钮。
+
+```json
+[
+  {
+    "type": "group",
+    "key": "hl",
+    "items": [
+      {
+        "type": "wrap",
+        "key": "red-hl",
+        "label": "红色高亮",
+        "binding": "",
+        "template": "[[#red]]==$^==",
+        "icon": "<svg ...></svg>"
+      },
+      {
+        "type": "wrap",
+        "key": "green-hl",
+        "label": "绿色高亮",
+        "binding": "",
+        "template": "[[#green]]==$^==",
+        "icon": "<svg ...></svg>"
+      }
+    ]
+  }
+]
+```
 
 **规则字段说明：**
 
